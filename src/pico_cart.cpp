@@ -7,7 +7,6 @@
 
 #include "hal_core.h"
 #include "log.h"
-#include "pico_audio.h"
 #include "pico_core.h"
 #include "pico_script.h"
 #include "utf8-util.h"
@@ -254,8 +253,6 @@ namespace pico_cart {
 		pico_control::set_sprite_flags(cart.sections["__gff__"]);
 		pico_control::set_font_data(cart.sections["__font__"]);
 		pico_control::set_map_data(cart.sections["__map__"]);
-		pico_control::set_music_from_cart(cart.sections["__music__"]);
-		pico_control::set_sfx_from_cart(cart.sections["__sfx__"]);
 		pico_control::init_rom();
 	}
 

@@ -1,10 +1,8 @@
 #include <SDL2/SDL.h>
 
 #include "config.h"
-#include "hal_audio.h"
 #include "hal_core.h"
 #include "log.h"
-#include "pico_audio.h"
 #include "pico_cart.h"
 #include "pico_core.h"
 #include "pico_data.h"
@@ -16,7 +14,6 @@ int safe_main(int argc, char** argv) {
 	//	GFX_Init(config::INIT_SCREEN_WIDTH * 4, config::INIT_SCREEN_HEIGHT * 4);
 	GFX_Init(512 * 3, 256 * 3);
 	GFX_CreateBackBuffer(config::INIT_SCREEN_WIDTH, config::INIT_SCREEN_HEIGHT);
-	AUDIO_Init();
 	pico_control::init();
 	pico_data::load_font_data();
 
@@ -70,7 +67,6 @@ int safe_main(int argc, char** argv) {
 		if ((TIME_GetTime_ms() - ticks) > target_ticks) {
 			HAL_StartFrame();
 			pico_control::frame_start();
-			pico_control::sound_tick();
 
 			if (!script_error) {
 				try {
@@ -175,7 +171,6 @@ int main(int argc, char** argv) {
 	}
 
 	pico_script::unload_scripting();
-	AUDIO_Shutdown();
 	GFX_End();
 
 	return 0;

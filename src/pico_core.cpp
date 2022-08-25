@@ -8,7 +8,6 @@
 
 #include "config.h"
 #include "log.h"
-#include "pico_audio.h"
 #include "pico_cart.h"
 #include "pico_gfx.h"
 #include "pico_memory.h"
@@ -269,8 +268,6 @@ namespace pico_control {
 		ram.addMemoryArea(&mem_scratch_data);
 		ram.addMemoryArea(&mem_music_data);
 		ram.addMemoryArea(&mem_sfx_data);
-
-		audio_init();
 	}
 
 	void frame_start() {
@@ -370,8 +367,6 @@ namespace pico_control {
 		pauseMenuActive = false;
 		gfx_init();
 		init_backbuffer_mem(config::INIT_SCREEN_WIDTH, config::INIT_SCREEN_HEIGHT);
-		stop_all_audio();
-		audio_init();
 		pico_cart::extractCart(pico_cart::getCart());
 		pico_apix::gfxstate(0);
 		pico_apix::screen(128, 128);

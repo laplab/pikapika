@@ -66,7 +66,7 @@ void GFX_Init(int x, int y) {
 
 	debug_trace_state = false;
 
-	int init_flags = SDL_INIT_VIDEO | SDL_INIT_AUDIO;
+	int init_flags = SDL_INIT_VIDEO;
 #ifndef TAC08_NO_JOYSTICK
 	init_flags = init_flags | SDL_INIT_JOYSTICK;
 #endif

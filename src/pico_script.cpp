@@ -9,11 +9,9 @@
 #include <set>
 
 #include "firmware.lua"
-#include "hal_audio.h"
 #include "hal_core.h"
 #include "hal_fs.h"
 #include "log.h"
-#include "pico_audio.h"
 #include "pico_cart.h"
 #include "pico_core.h"
 #include "z8lua/lauxlib.h"
@@ -656,39 +654,13 @@ static int impl_stat(lua_State* ls) {
 
 static int impl_music(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto nargs = lua_gettop(ls);
-	auto n = lua_tonumber(ls, 1).toInt();
-	auto fadems = lua_tonumber(ls, 2).toInt();
-	auto channelmask = lua_tonumber(ls, 3).toInt();
-
-	if (nargs == 1) {
-		pico_api::music(n);
-	} else if (nargs == 2) {
-		pico_api::music(n, fadems);
-	} else {
-		pico_api::music(n, fadems, channelmask);
-	}
-
+	// There is no support for audio at the moment.
 	return 0;
 }
 
 static int impl_sfx(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto nargs = lua_gettop(ls);
-	auto n = lua_tonumber(ls, 1).toInt();
-	auto channel = lua_tonumber(ls, 2).toInt();
-	auto offset = lua_tonumber(ls, 3).toInt();
-	auto length = lua_tonumber(ls, 4).toInt();
-
-	if (nargs == 1) {
-		pico_api::sfx(n);
-	} else if (nargs == 2) {
-		pico_api::sfx(n, channel);
-	} else if (nargs == 3) {
-		pico_api::sfx(n, channel, offset);
-	} else {
-		pico_api::sfx(n, channel, offset, length);
-	}
+	// There is no support for audio at the moment.
 	return 0;
 }
 
@@ -772,50 +744,34 @@ static int implx_wrstr(lua_State* ls) {
 // returns nil if sound could not be loaded.
 static int implx_wavload(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto name = luaL_checkstring(ls, 1);
-	int id = pico_apix::wavload(name);
-	if (id < 0)
-		lua_pushnil(ls);
-	else
-		lua_pushnumber(ls, id);
-
+	// There is no support for audio at the moment.
+	// lua_pushnil(ls);
+	lua_pushnumber(ls, 1);
 	return 1;
 }
 
 static int implx_wavplay(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto id = luaL_checknumber(ls, 1).toInt();
-	auto chan = luaL_checknumber(ls, 2).toInt();
-	if (lua_gettop(ls) == 3) {
-		bool loop = lua_toboolean(ls, 3);
-		AUDIO_Play(id, chan, loop);
-		return 0;
-	}
-	auto loop_start = luaL_checknumber(ls, 3).toInt();
-	auto loop_end = luaL_checknumber(ls, 4).toInt();
-	AUDIO_Play(id, chan, loop_start, loop_end);
+	// There is no support for audio at the moment.
 	return 0;
 }
 
 static int implx_wavstop(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto chan = luaL_checknumber(ls, 1).toInt();
-	AUDIO_Stop(chan);
+	// There is no support for audio at the moment.
 	return 0;
 }
 
 static int implx_wavstoploop(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto chan = luaL_checknumber(ls, 1).toInt();
-	AUDIO_StopLoop(chan);
+	// There is no support for audio at the moment.
 	return 0;
 }
 
 static int implx_wavplaying(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto chan = luaL_checknumber(ls, 1).toInt();
-	bool b = AUDIO_isPlaying(chan);
-	lua_pushboolean(ls, b);
+	// There is no support for audio at the moment.
+	lua_pushboolean(ls, false);
 	return 1;
 }
 
