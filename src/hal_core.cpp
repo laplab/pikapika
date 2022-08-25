@@ -11,7 +11,6 @@
 #endif
 
 #include "config.h"
-#include "crypt.h"
 #include "deque"
 #include "hal_core.h"
 #include "hal_palette.h"
@@ -562,7 +561,6 @@ std::string FILE_LoadFile(std::string name) {
 			SDL_RWclose(file);
 		}
 	}
-	decrypt(data);
 	return data;
 }
 
@@ -575,8 +573,6 @@ std::string FILE_LoadGameState(std::string name) {
 }
 
 void FILE_SaveGameState(std::string name, std::string data) {
-	encrypt(data);
-
 	const char* path = SDL_GetPrefPath("0xcafed00d", "tac08");
 	name = std::string(path) + name;
 	SDL_free((void*)path);
