@@ -10,7 +10,6 @@
 #include <sstream>
 
 #include "firmware.lua"
-#include "hal_core.h"
 #include "pico_cart.h"
 #include "pico_core.h"
 #include "z8lua/lauxlib.h"
