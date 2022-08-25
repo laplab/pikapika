@@ -6,7 +6,6 @@
 #include "pico_cart.h"
 
 #include "hal_core.h"
-#include "log.h"
 #include "pico_core.h"
 #include "pico_script.h"
 #include "utf8-util.h"
@@ -107,7 +106,6 @@ namespace pico_cart {
 			cart.source.push_back(Line{filenum, std::string("-- ") + line});
 			std::string incfile = cart.sections["base_path"] + utils::trimboth(line.substr(8));
 			incfile = path::removeRelative(incfile);
-			logr << "Loading include file " << incfile;
 			std::string data = FILE_LoadFile(incfile);
 			if (data.size() == 0) {
 				throw error(std::string("failed to open include file: ") + incfile);
@@ -120,8 +118,6 @@ namespace pico_cart {
 	}
 
 	void do_load(std::istream& s, Cart& cart, std::string filename) {
-		TraceFunction();
-
 		cart.files.push_back(filename);
 		int filenum = cart.files.size() - 1;
 
@@ -133,7 +129,6 @@ namespace pico_cart {
 			if (!check_include_file(line, cart, filenum)) {
 				if (valid_sections.find(line) != valid_sections.end()) {
 					cart.sections["cur_sect"] = line;
-					logr << "section " << line;
 				} else {
 					if (cart.sections["cur_sect"] == "__lua__") {
 						cart.source.push_back(Line{filenum, line});
@@ -199,9 +194,6 @@ namespace pico_cart {
 	// callng load
 	void load(std::string filename) {
 		path::test();
-		TraceFunction();
-
-		logr << "Request cart load: " << filename;
 
 		filename = path::normalisePath(filename);
 
@@ -211,13 +203,11 @@ namespace pico_cart {
 		}
 
 		std::string data = FILE_LoadFile(filename);
-		logr << "loaded: " << data.size() << "bytes";
 		if (data.size() == 0) {
 			throw error(std::string("failed to open cart file: ") + filename);
 		}
 
 		loadedCart = Cart{};
-		logr << "Loading cart: " << filename;
 		loadedCart.sections["filename"] = filename;
 		loadedCart.sections["base_path"] = path::getPath(filename);
 		loadedCart.sections["cart_name"] = path::splitFilename(path::getFilename(filename)).first;
@@ -230,14 +220,10 @@ namespace pico_cart {
 	void extractAssets(Cart& cart);
 
 	void loadassets(std::string filename, Cart& parentCart) {
-		TraceFunction();
-
-		logr << "Request asset load: " << filename;
 		filename = path::normalisePath(filename);
 		filename = loadedCart.sections["base_path"] + filename;
 
 		std::string data = FILE_LoadFile(filename);
-		logr << "loaded: " << data.size() << "bytes";
 		if (data.size() > 0) {
 			Cart c;
 			c.sections["cur_sect"] = "header";

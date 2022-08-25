@@ -2,7 +2,6 @@
 #include <map>
 
 #include "hal_palette.h"
-#include "log.h"
 
 // Pico8 palette
 static PaletteInfo pico8_palette{
@@ -50,7 +49,6 @@ const PaletteInfo& GFX_GetPaletteInfo(const std::string& name) {
 	auto pal_itr = palette_map.find(name);
 	// return default pico8 palette if name not found
 	if (pal_itr == palette_map.end()) {
-		logr << LogLevel::err << "palette: " << name << "not found loading default pico8 palette";
 		return pico8_palette;
 	}
 	return pal_itr->second;

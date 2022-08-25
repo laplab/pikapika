@@ -1,5 +1,4 @@
 #include "utils.h"
-#include "log.h"
 
 #include <assert.h>
 #include <algorithm>

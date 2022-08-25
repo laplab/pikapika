@@ -2,15 +2,12 @@
 
 #include "config.h"
 #include "hal_core.h"
-#include "log.h"
 #include "pico_cart.h"
 #include "pico_core.h"
 #include "pico_data.h"
 #include "pico_script.h"
 
 int safe_main(int argc, char** argv) {
-	TraceFunction();
-
 	//	GFX_Init(config::INIT_SCREEN_WIDTH * 4, config::INIT_SCREEN_HEIGHT * 4);
 	GFX_Init(512 * 3, 256 * 3);
 	GFX_CreateBackBuffer(config::INIT_SCREEN_WIDTH, config::INIT_SCREEN_HEIGHT);
@@ -23,7 +20,6 @@ int safe_main(int argc, char** argv) {
 		if (argc > 1) {
 			pico_api::load(argv[1]);
 		} else {
-			logr << LogLevel::err << "no cart specified";
 			return 1;
 		}
 	}
@@ -98,7 +94,6 @@ int safe_main(int argc, char** argv) {
 					}
 				} catch (pico_script::error& e) {
 					pico_control::displayerror(e.what());
-					logr << LogLevel::err << e.what();
 					script_error = true;
 				}
 			}
@@ -128,13 +123,6 @@ int safe_main(int argc, char** argv) {
 			updateTime /= gameFrameCount;
 			drawTime /= gameFrameCount;
 			copyBBTime /= gameFrameCount;
-
-			logr << LogLevel::perf << "game FPS: " << gameFrameCount
-			     << " sys FPS: " << systemFrameCount << " update: " << updateTime / 1000.0f
-			     << "ms  draw: " << drawTime / 1000.0f << "ms"
-			     << " bb copy: " << copyBBTime << "us"
-			     << " cpu: " << cpu_usage;
-
 			actual_fps = gameFrameCount;
 			sys_fps = systemFrameCount;
 			cpu_usage = ((updateTime + drawTime) * 100) / (target_fps == 60 ? 16666 : 33333);
@@ -151,23 +139,12 @@ int safe_main(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-	logr.enable(true);
-	logr.setOutputFunction(SYSLOG_LogMessage);
-	logr.setOutputFilter(LogLevel::perf, false);
-	logr.setOutputFilter(LogLevel::info, false);
-	logr.setOutputFilter(LogLevel::trace, false);
-
-	TraceFunction();
 	try {
 		safe_main(argc, argv);
 	} catch (gfx_exception& err) {
-		logr << LogLevel::err << err.what();
 	} catch (pico_script::error& err) {
-		logr << LogLevel::err << err.what();
 	} catch (pico_cart::error& err) {
-		logr << LogLevel::err << err.what();
 	} catch (std::exception& err) {
-		logr << LogLevel::err << err.what();
 	}
 
 	pico_script::unload_scripting();

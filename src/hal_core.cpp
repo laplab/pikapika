@@ -14,7 +14,6 @@
 #include "deque"
 #include "hal_core.h"
 #include "hal_palette.h"
-#include "log.h"
 
 static SDL_Window* sdlWin = nullptr;
 static SDL_Renderer* sdlRen = nullptr;
@@ -40,29 +39,7 @@ static void throw_error(std::string msg) {
 	throw(gfx_exception(msg));
 }
 
-void SYSLOG_LogMessage(LogLevel l, const char* msg) {
-	switch (l) {
-		case LogLevel::info:
-			SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "DEBUG: %s", msg);
-			break;
-		case LogLevel::perf:
-			SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, " PERF: %s", msg);
-			break;
-		case LogLevel::err:
-			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, " FAIL: %s", msg);
-			break;
-		case LogLevel::trace:
-			SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "TRACE: %s", msg);
-			break;
-		case LogLevel::apitrace:
-			SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "  API: %s", msg);
-			break;
-	}
-}
-
 void GFX_Init(int x, int y) {
-	TraceFunction();
-
 	debug_trace_state = false;
 
 	int init_flags = SDL_INIT_VIDEO;
@@ -100,27 +77,17 @@ void GFX_Init(int x, int y) {
 			joystick_index = n;
 		}
 
-		logr << "Joystick: " << n;
-		logr << "  name: " << SDL_JoystickName(js);
-		logr << "  buttons: " << SDL_JoystickNumButtons(js);
-		logr << "  axis: " << SDL_JoystickNumAxes(js);
-		logr << "  hats: " << SDL_JoystickNumHats(js);
 		SDL_JoystickClose(js);
 	}
 
 	if (joystick_index >= 0) {
 		joystick = SDL_JoystickOpen(joystick_index);
-		if (joystick) {
-			logr << "Opened joystick " << joystick_index;
-		}
 	}
 
 	int num = SDL_GetNumTouchDevices();
-	logr << "num touch devices: " << num;
 }
 
 void GFX_End() {
-	TraceFunction();
 	if (sdlRen) {
 		SDL_DestroyRenderer(sdlRen);
 	}
@@ -157,7 +124,6 @@ pixel_t GFX_GetPixel(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void GFX_CreateBackBuffer(int x, int y) {
-	TraceFunction();
 	GFX_SetBackBufferSize(x, y);
 
 	sdlTex = SDL_CreateTexture(sdlRen, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING,
@@ -377,9 +343,6 @@ static void processTouchEvent(const SDL_TouchFingerEvent& ev) {
 			ti.state |= TouchInfo::JustReleased;
 		}
 	}
-
-	// logr << "touch: x=" << ev.x << " y=" << ev.y << " fid=" << ev.fingerId << " tid=" <<
-	// ev.touchId;
 }
 
 static std::deque<std::string> keypresses;
@@ -407,13 +370,10 @@ std::string INP_GetKeyPress() {
 bool INP_ProcessInputEvents(const SDL_Event& ev) {
 	if (SDL_IsTextInputActive()) {
 		if (ev.type == SDL_TEXTINPUT) {
-			// logr << ev.text.text;
 			addKeyPress(ev.text.text);
 		}
 		if (ev.type == SDL_KEYDOWN) {
 			if (ev.key.keysym.sym < 32 || ev.key.keysym.sym >= 127) {
-				// logr << ev.key.keysym.sym << " " << SDL_GetKeyName(ev.key.keysym.sym);
-
 				std::string k = SDL_GetKeyName(ev.key.keysym.sym);
 				std::transform(k.begin(), k.end(), k.begin(),
 				               [](unsigned char c) { return std::tolower(c); });
@@ -450,13 +410,11 @@ bool INP_ProcessInputEvents(const SDL_Event& ev) {
 	} else if (ev.type == SDL_MOUSEWHEEL) {
 		mouseWheel += ev.wheel.y;
 	} else if (ev.type == SDL_JOYAXISMOTION) {
-		// logr << "axis: " << (int)ev.jaxis.axis << "=" << ev.jaxis.value;
 		set_state_bit(joyState, 0, ev.jaxis.axis == 0, ev.jaxis.value < -10000);
 		set_state_bit(joyState, 1, ev.jaxis.axis == 0, ev.jaxis.value > 10000);
 		set_state_bit(joyState, 2, ev.jaxis.axis == 1, ev.jaxis.value < -10000);
 		set_state_bit(joyState, 3, ev.jaxis.axis == 1, ev.jaxis.value > 10000);
 	} else if (ev.type == SDL_JOYHATMOTION) {
-		// logr << "hat: " << (int)ev.jhat.hat << "=" << (int)SDL_JoystickGetHat(joystick, 0);
 		auto hatval = SDL_JoystickGetHat(joystick, 0);
 		set_state_bit(hatState, 0, true, hatval & SDL_HAT_LEFT);
 		set_state_bit(hatState, 1, true, hatval & SDL_HAT_RIGHT);
@@ -464,7 +422,6 @@ bool INP_ProcessInputEvents(const SDL_Event& ev) {
 		set_state_bit(hatState, 3, true, hatval & SDL_HAT_DOWN);
 
 	} else if (ev.type == SDL_JOYBUTTONDOWN || ev.type == SDL_JOYBUTTONUP) {
-		// logr << "btn: " << (int)ev.jbutton.button << "=" << (bool)ev.jbutton.state;
 		set_state_bit(joyState, 4, ev.jbutton.button == 1, (bool)ev.jbutton.state);
 		set_state_bit(joyState, 5, ev.jbutton.button == 0, (bool)ev.jbutton.state);
 		set_state_bit(joyState, 6, ev.jbutton.button == 7, (bool)ev.jbutton.state);
@@ -548,7 +505,6 @@ MouseState INP_GetMouseState() {
 }
 
 std::string FILE_LoadFile(std::string name) {
-	logr << "loading file: " << name;
 	std::string data;
 	SDL_RWops* file = SDL_RWFromFile(name.c_str(), "r");
 	if (file) {
@@ -556,7 +512,6 @@ std::string FILE_LoadFile(std::string name) {
 		if (sz) {
 			data.resize(sz, ' ');
 			SDL_RWread(file, &data[0], sz, 1);
-			logr << "  " << sz << " bytes loaded";
 
 			SDL_RWclose(file);
 		}
@@ -577,13 +532,10 @@ void FILE_SaveGameState(std::string name, std::string data) {
 	name = std::string(path) + name;
 	SDL_free((void*)path);
 
-	logr << "writing file: " << name << " bytes: " << data.length();
-
 	SDL_RWops* file = SDL_RWFromFile(name.c_str(), "w");
 	if (file) {
 		SDL_RWwrite(file, data.c_str(), data.length(), 1);
 		SDL_RWclose(file);
-		logr << "    file writen ";
 	}
 }
 
@@ -657,8 +609,6 @@ void PLATFORM_OpenURL(std::string url) {
 	if (method_id) {
 		jstring jurl = env->NewStringUTF(url.c_str());
 		env->CallVoidMethod(activity, method_id, jurl);
-	} else {
-		logr << "SDLActivity.openURL not found";
 	}
 
 	env->DeleteLocalRef(activity);
@@ -672,7 +622,6 @@ bool DEBUG_Trace() {
 
 void DEBUG_Trace(bool enable) {
 	debug_trace_state = enable;
-	logr.setOutputFilter(LogLevel::apitrace, enable);
 }
 
 bool DEBUG_ReloadRequested() {

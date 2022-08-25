@@ -7,10 +7,10 @@
 #include <functional>
 #include <iostream>
 #include <set>
+#include <sstream>
 
 #include "firmware.lua"
 #include "hal_core.h"
-#include "log.h"
 #include "pico_cart.h"
 #include "pico_core.h"
 #include "z8lua/lauxlib.h"
@@ -27,7 +27,6 @@ static bool hook_funcs = false;
 static void throw_error(int err) {
 	if (err) {
 		std::string msg = lua_tostring(lstate, -1);
-		logr << LogLevel::err << msg;
 		auto errlnstart = msg.find(":");
 		auto errlnend = msg.find(":", errlnstart + 1);
 		int errline = std::stoi(msg.substr(errlnstart + 1, errlnend - errlnstart - 1)) - 1;
@@ -54,7 +53,6 @@ static void dump_func(lua_State* ls, const char* funcname) {
 		lua_remove(ls, -1);
 	}
 	str << ")";
-	logr << LogLevel::apitrace << str.str();
 }
 
 #define DEBUG_DUMP_FUNCTION                  \
@@ -981,9 +979,6 @@ static bool debug_singlestep = false;
 static int break_line_number = -1;
 
 static void dbg_hookfunc(lua_State* ls, lua_Debug* ar) {
-	//	logr << "dbg_hookfunc " << ar->currentline << ":"
-	//<< pico_apix::dbg_getsrc("main", ar->currentline).first;
-
 	break_line_number = -1;
 
 	lua_Debug info;
@@ -1015,11 +1010,6 @@ static int implx_dbg_cocreate(lua_State* ls) {
 }
 
 void dumpstack(lua_State* ls, const char* name) {
-	TraceFunction();
-	logr << "dumpstack: " << name << " items: " << lua_gettop(ls);
-	for (int n = 1; n <= lua_gettop(ls); n++) {
-		logr << lua_typename(ls, lua_type(ls, n)) << ": " << lua_tostring(ls, n);
-	}
 }
 
 // dbg_coresume (thread, mode) -> status_str, (error_str|line_number)
@@ -1189,22 +1179,7 @@ static void register_cfuncs(lua_State* ls) {
 }
 
 namespace pico_script {
-
-	/* - not needed here
-	    const char* buffer;
-	    const char* buffer_reader(lua_State* L, void* ud, size_t* sz) {
-	        logr << LogLevel::trace << char(*buffer);
-	        if (*buffer) {
-	            *sz = 1;
-	        } else {
-	            *sz = 0;
-	        }
-	        return buffer++;
-	    }
-	*/
-
 	void load(const pico_cart::Cart& cart) {
-		TraceFunction();
 		unload_scripting();
 		init_scripting();
 

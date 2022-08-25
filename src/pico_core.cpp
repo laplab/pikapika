@@ -7,7 +7,6 @@
 #include <array>
 
 #include "config.h"
-#include "log.h"
 #include "pico_cart.h"
 #include "pico_gfx.h"
 #include "pico_memory.h"
@@ -230,7 +229,6 @@ namespace pico_private {
 namespace pico_control {
 
 	void init_backbuffer_mem(int x, int y) {
-		TraceFunction();
 		x = utils::limit(x, config::MIN_SCREEN_WIDTH, config::MAX_SCREEN_WIDTH);
 		y = utils::limit(y, config::MIN_SCREEN_HEIGHT, config::MAX_SCREEN_HEIGHT);
 
@@ -241,7 +239,6 @@ namespace pico_control {
 	}
 
 	void init() {
-		TraceFunction();
 		if (!backbuffer) {
 			backbuffer = new uint8_t[config::MAX_SCREEN_WIDTH * config::MAX_SCREEN_HEIGHT];
 		}
@@ -291,7 +288,6 @@ namespace pico_control {
 	}
 
 	void set_sprite_data_4bit(std::string data) {
-		TraceFunction();
 		if (data.size()) {
 			if (currentSprData == &spriteSheet) {
 				pico_private::copy_gfxdata_to_ram(pico_ram::MEM_GFX_ADDR, data);
@@ -302,25 +298,20 @@ namespace pico_control {
 	}
 
 	void set_sprite_data_8bit(std::string data) {
-		TraceFunction();
 		if (data.size()) {
-			logr << " loading 8bit sprite data";
 			pico_private::copy_data_to_sprites(*currentSprData, data, true);
 		}
 	}
 
 	void set_sprite_flags(std::string flags) {
-		TraceFunction();
 		pico_private::copy_data_to_ram(pico_ram::MEM_GFX_PROPS_ADDR, flags);
 	}
 
 	void set_font_data(std::string data) {
-		TraceFunction();
 		pico_private::copy_data_to_sprites(*currentFontData, data, false);
 	}
 
 	void set_map_data(std::string data) {
-		TraceFunction();
 		pico_private::copy_data_to_ram(pico_ram::MEM_MAP_ADDR, data);
 	}
 
@@ -363,7 +354,6 @@ namespace pico_control {
 	}
 
 	void restartCart() {
-		TraceFunction();
 		pauseMenuActive = false;
 		gfx_init();
 		init_backbuffer_mem(config::INIT_SCREEN_WIDTH, config::INIT_SCREEN_HEIGHT);
@@ -400,19 +390,16 @@ namespace pico_control {
 namespace pico_api {
 
 	void load(std::string cartname) {
-		TraceFunction();
 		pico_cart::load(cartname);
 		lastLoadedCart = cartname;
 		pico_control::restartCart();
 	}
 
 	void reloadcart() {
-		TraceFunction();
 		load(pico_cart::getCart().sections["basepath"] + pico_cart::getCart().sections["filename"]);
 	}
 
 	void run() {
-		TraceFunction();
 		pico_control::restartCart();
 	}
 
