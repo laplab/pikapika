@@ -1,11 +1,9 @@
-#include <fstream>
 #include <map>
 #include <set>
 #include <sstream>
 
 #include "pico_cart.h"
 
-#include "hal_core.h"
 #include "pico_core.h"
 #include "pico_script.h"
 #include "utf8-util.h"
@@ -99,24 +97,6 @@ namespace pico_cart {
 	                                               "__font__", "__gff__",   "__map__",
 	                                               "__sfx__",  "__music__", "__label__"};
 
-	void do_load(std::istream& s, Cart& cart, std::string filename);
-
-	bool check_include_file(const std::string& line, Cart& cart, int filenum) {
-		if (line.size() && line[0] == '#' && line.find("#include") == 0) {
-			cart.source.push_back(Line{filenum, std::string("-- ") + line});
-			std::string incfile = cart.sections["base_path"] + utils::trimboth(line.substr(8));
-			incfile = path::removeRelative(incfile);
-			std::string data = FILE_LoadFile(incfile);
-			if (data.size() == 0) {
-				throw error(std::string("failed to open include file: ") + incfile);
-			}
-			std::istringstream s(data);
-			do_load(s, cart, incfile);
-			return true;
-		}
-		return false;
-	}
-
 	void do_load(std::istream& s, Cart& cart, std::string filename) {
 		cart.files.push_back(filename);
 		int filenum = cart.files.size() - 1;
@@ -126,15 +106,13 @@ namespace pico_cart {
 			line = utils::trimright(line, " \n\r");
 			line = convert_emojis(line);
 
-			if (!check_include_file(line, cart, filenum)) {
-				if (valid_sections.find(line) != valid_sections.end()) {
-					cart.sections["cur_sect"] = line;
+			if (valid_sections.find(line) != valid_sections.end()) {
+				cart.sections["cur_sect"] = line;
+			} else {
+				if (cart.sections["cur_sect"] == "__lua__") {
+					cart.source.push_back(Line{filenum, line});
 				} else {
-					if (cart.sections["cur_sect"] == "__lua__") {
-						cart.source.push_back(Line{filenum, line});
-					} else {
-						cart.sections[cart.sections["cur_sect"]] += line + "\n";
-					}
+					cart.sections[cart.sections["cur_sect"]] += line + "\n";
 				}
 			}
 		}
@@ -161,14 +139,6 @@ namespace pico_cart {
 		return li;
 	}
 
-	std::string getCartName() {
-		return "";
-	}
-
-	std::string getCartPath() {
-		return "";
-	}
-
 	std::string convert_emojis(const std::string& lua) {
 		std::string res;
 		for (char32_t codepoint : utf8::CodepointIterator(lua)) {
@@ -190,48 +160,15 @@ namespace pico_cart {
 		return loadedCart;
 	}
 
-	// if the filename begins with a $ then the path of the new cart of relative to the one
-	// callng load
-	void load(std::string filename) {
-		path::test();
-
-		filename = path::normalisePath(filename);
-
-		if (loadedCart.sections.find("base_path") != loadedCart.sections.end() &&
-		    filename.length() && filename[0] == '$') {
-			filename = loadedCart.sections["base_path"] + filename.substr(1);
-		}
-
-		std::string data = FILE_LoadFile(filename);
-		if (data.size() == 0) {
-			throw error(std::string("failed to open cart file: ") + filename);
-		}
-
+	void load(std::string data) {
 		loadedCart = Cart{};
-		loadedCart.sections["filename"] = filename;
-		loadedCart.sections["base_path"] = path::getPath(filename);
-		loadedCart.sections["cart_name"] = path::splitFilename(path::getFilename(filename)).first;
 		loadedCart.sections["cur_sect"] = "header";
 
 		std::istringstream s(data);
-		do_load(s, loadedCart, filename);
+		do_load(s, loadedCart, "main");
 	}
 
 	void extractAssets(Cart& cart);
-
-	void loadassets(std::string filename, Cart& parentCart) {
-		filename = path::normalisePath(filename);
-		filename = loadedCart.sections["base_path"] + filename;
-
-		std::string data = FILE_LoadFile(filename);
-		if (data.size() > 0) {
-			Cart c;
-			c.sections["cur_sect"] = "header";
-			std::istringstream s(data);
-			do_load(s, c, filename);
-			extractAssets(c);
-		}
-	}
 
 	void extractAssets(Cart& cart) {
 		pico_control::set_sprite_data_4bit(cart.sections["__gfx__"]);

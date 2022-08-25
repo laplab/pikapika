@@ -675,10 +675,6 @@ namespace pico_apix {
 		GFX_SetFullScreen(enable);
 	}
 
-	void assetload(std::string filename) {
-		pico_cart::loadassets(filename, pico_cart::getCart());
-	}
-
 	std::pair<std::string, bool> dbg_getsrc(std::string src, int line) {
 		typedef std::pair<std::string, bool> return_t;
 

@@ -937,15 +937,6 @@ static int implx_window(lua_State* ls) {
 	return 0;
 }
 
-static int implx_assetload(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto s = luaL_checkstring(ls, 1);
-	if (s) {
-		pico_apix::assetload(s);
-	}
-	return 0;
-}
-
 static int implx_gfxstate(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
 	int index = lua_tonumber(ls, 1).toInt();
@@ -1158,7 +1149,6 @@ static const luaL_Reg tac08_api[] = {{"wrclip", implx_wrclip},
                                      {"troff", implx_troff},
                                      {"fullscreen", implx_fullscreen},
                                      {"window", implx_window},
-                                     {"assetload", implx_assetload},
                                      {"gfxstate", implx_gfxstate},
                                      {"dbg_getsrc", implx_dbg_getsrc},
                                      {"dbg_getsrclines", implx_dbg_getsrclines},

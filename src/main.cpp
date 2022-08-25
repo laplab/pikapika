@@ -6,6 +6,17 @@
 #include "pico_core.h"
 #include "pico_data.h"
 #include "pico_script.h"
+#include "utils.h"
+
+void load_cart(std::string filename) {
+	path::test();
+	filename = path::normalisePath(filename);
+	std::string data = FILE_LoadFile(filename);
+	if (data.size() == 0) {
+		throw std::runtime_error(std::string("failed to open cart file: ") + filename);
+	}
+	pico_api::load(data);
+}
 
 int safe_main(int argc, char** argv) {
 	//	GFX_Init(config::INIT_SCREEN_WIDTH * 4, config::INIT_SCREEN_HEIGHT * 4);
@@ -15,10 +26,10 @@ int safe_main(int argc, char** argv) {
 	pico_data::load_font_data();
 
 	if (argc == 1) {
-		pico_api::load(FILE_GetDefaultCartName());
+		load_cart(FILE_GetDefaultCartName());
 	} else {
 		if (argc > 1) {
-			pico_api::load(argv[1]);
+			load_cart(argv[1]);
 		} else {
 			return 1;
 		}

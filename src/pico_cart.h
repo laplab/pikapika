@@ -24,8 +24,7 @@ namespace pico_cart {
 		std::vector<std::string> files;
 	};
 
-	void load(std::string filename);
-	void loadassets(std::string filename, Cart& parentCart);
+	void load(std::string data);
 	void extractCart(Cart& cart);
 	Cart& getCart();
 
