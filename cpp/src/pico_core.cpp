@@ -13,6 +13,15 @@
 #include "pico_script.h"
 #include "utils.h"
 
+#include <iostream>
+#include <stdint.h>
+
+extern "C" {
+  void hello_laplab() {
+    std::cout << "Hello from C++, laplab!" << std::endl;
+  }
+}
+
 static pico_api::colour_t* backbuffer = nullptr;
 
 static int buffer_size_x = 0;

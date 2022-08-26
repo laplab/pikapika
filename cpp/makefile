@@ -22,7 +22,7 @@ EXE = tac08
 
 all: $(EXE)
 
-$(EXE): bin/main.o bin/hal_core.o bin/hal_palette.o bin/pico.a
+$(EXE): bin/main.o bin/hal_core.o bin/hal_palette.o bin/libpico.a
 	$(CXX) $^ $(LDFLAGS) -o $@
 	objdump -t -C $@ | sort >bin/app.symbols
 	@echo "Built All The Things!!!"
@@ -60,7 +60,7 @@ bin/utils.o: src/utils.cpp
 bin/utf8-util.o: $(UTF8_UTIL_BASE)/utf8-util.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 
-bin/pico.a: bin/pico_core.o bin/pico_gfx.o bin/pico_data.o bin/pico_memory.o bin/pico_cart.o bin/pico_script.o bin/utils.o bin/utf8-util.o
+bin/libpico.a: bin/pico_core.o bin/pico_gfx.o bin/pico_data.o bin/pico_memory.o bin/pico_cart.o bin/pico_script.o bin/utils.o bin/utf8-util.o
 	ar rcs $@ $^
 
 clean:

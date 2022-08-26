@@ -5,6 +5,10 @@
 
 #include "pico_gfx.h"
 
+extern "C" {
+  void hello_laplab();
+}
+
 namespace pico_api {
 	void update_fps(uint32_t target, uint32_t actual, uint32_t sys, uint32_t cpu);
 	void update_display_area(uint32_t x, uint32_t y);
