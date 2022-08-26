@@ -5,7 +5,6 @@
 #include <array>
 #include <map>
 
-#include "hal_core.h"
 #include "utf8-util.h"
 
 static pico_api::colour_t* backbuffer = nullptr;
@@ -52,7 +51,8 @@ namespace pico_private {
 		for (size_t n = 0; n < currentGraphicsState->palette_map.size(); n++) {
 			currentGraphicsState->palette_map[n] = (colour_t)n;
 		}
-		GFX_RestorePaletteMapping();
+		// TODO laplab: Handle palette changes.
+		// GFX_RestorePaletteMapping();
 	}
 
 	static void restore_transparency() {
@@ -693,7 +693,8 @@ namespace pico_api {
 			if (!currentGraphicsState->extendedPalette) {
 				c1 = (c1 & 0xf) | ((c1 & 0xf0) >> 3);
 			}
-			GFX_MapPaletteIndex(c0, c1);
+			// TODO laplab: Handle pallete colour change.
+			// GFX_MapPaletteIndex(c0, c1);
 		} else {
 			currentGraphicsState->palette_map[c0 & 0xf] = c1 & 0xf;
 		}

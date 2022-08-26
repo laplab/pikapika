@@ -39,7 +39,7 @@ bin/hal_palette.o: src/hal_palette.cpp src/hal_palette.h
 bin/pico_core.o: src/pico_core.cpp src/pico_core.h src/pico_memory.h src/pico_script.h src/pico_cart.h src/config.h src/utils.h
 	$(CXX) $(CXXFLAGS) $< -o $@
 
-bin/pico_gfx.o: src/pico_gfx.cpp src/pico_gfx.h src/hal_core.h src/config.h src/utils.h
+bin/pico_gfx.o: src/pico_gfx.cpp src/pico_gfx.h src/config.h src/utils.h
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 bin/pico_data.o: src/pico_data.cpp src/pico_data.h src/pico_core.h
@@ -51,7 +51,7 @@ bin/pico_memory.o: src/pico_memory.cpp src/pico_memory.h
 bin/pico_cart.o: src/pico_cart.cpp src/pico_cart.h src/pico_core.h src/pico_script.h src/utils.h
 	$(CXX) $(CXXFLAGS) $< -o $@
 
-bin/pico_script.o: src/pico_script.cpp src/pico_script.h src/pico_core.h src/pico_cart.h src/hal_core.h src/firmware.lua
+bin/pico_script.o: src/pico_script.cpp src/pico_script.h src/pico_core.h src/pico_cart.h src/firmware.lua
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 bin/utils.o: src/utils.cpp src/utils.h
