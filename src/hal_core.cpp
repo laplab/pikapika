@@ -83,8 +83,6 @@ void GFX_Init(int x, int y) {
 	if (joystick_index >= 0) {
 		joystick = SDL_JoystickOpen(joystick_index);
 	}
-
-	int num = SDL_GetNumTouchDevices();
 }
 
 void GFX_End() {
@@ -185,7 +183,7 @@ void GFX_SetPaletteRGBIndex(uint8_t i, uint8_t r, uint8_t g, uint8_t b) {
 	original_palette[i] = palette[i];
 }
 
-void GFX_CopyBackBuffer(uint8_t* buffer, int buffer_w, int buffer_h) {
+void GFX_CopyBackBuffer(uint8_t* buffer, int buffer_w, int buffer_h, const std::array<uint8_t, 256>& screen_palette) {
 	pixel_t* pixels;
 	int pitch;
 
@@ -198,9 +196,9 @@ void GFX_CopyBackBuffer(uint8_t* buffer, int buffer_w, int buffer_h) {
 
 	for (int y = 0; y < buffer_h; y++) {
 		for (int x = 0; x < buffer_w; x++) {
-			pixels[x] = palette[buffer[x]];
+			pixels[x] = palette[screen_palette[buffer[x]]];
 			x++;
-			pixels[x] = palette[buffer[x]];
+			pixels[x] = palette[screen_palette[buffer[x]]];
 		}
 		pixels += pitch / sizeof(pixel_t);
 		buffer += buffer_w;

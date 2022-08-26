@@ -8,6 +8,8 @@
 namespace pico_api {
 	typedef uint8_t colour_t;
 
+	const std::array<pico_api::colour_t, 256>& get_screen_palette();
+
 	void cls(colour_t c);
 	void cls();
 

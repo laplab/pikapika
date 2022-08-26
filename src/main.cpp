@@ -119,7 +119,7 @@ int safe_main(int argc, char** argv) {
 			pico_api::colour_t* buffer = pico_control::get_buffer(buffer_w, buffer_h);
 			uint64_t copyBBStart = TIME_GetProfileTime();
 			GFX_SetBackBufferSize(buffer_w, buffer_h);
-			GFX_CopyBackBuffer(buffer, buffer_w, buffer_h);
+			GFX_CopyBackBuffer(buffer, buffer_w, buffer_h, pico_api::get_screen_palette());
 			copyBBTime += TIME_GetElapsedProfileTime_us(copyBBStart);
 
 			ticks = TIME_GetTime_ms();

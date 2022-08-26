@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <stdexcept>
+#include <array>
 
 struct gfx_exception : public std::runtime_error {
 	using std::runtime_error::runtime_error;
@@ -17,7 +18,7 @@ void GFX_Init(int x, int y);
 void GFX_End();
 
 void GFX_CreateBackBuffer(int x, int y);
-void GFX_CopyBackBuffer(uint8_t* buffer, int buffer_w, int buffer_h);
+void GFX_CopyBackBuffer(uint8_t* buffer, int buffer_w, int buffer_h, const std::array<uint8_t, 256>& screen_palette);
 void GFX_SetBackBufferSize(int x, int y);
 
 void GFX_Flip();

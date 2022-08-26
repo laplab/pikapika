@@ -18,6 +18,8 @@ static uint8_t* mapbuffer = nullptr;
 
 static pico_api::colour_t* fontbuffer = nullptr;
 
+static std::array<pico_api::colour_t, 256> screen_palette;
+
 struct GraphicsState {
 	pico_api::colour_t fg = 7;
 	pico_api::colour_t bg = 0;
@@ -50,9 +52,8 @@ namespace pico_private {
 	static void restore_palette() {
 		for (size_t n = 0; n < currentGraphicsState->palette_map.size(); n++) {
 			currentGraphicsState->palette_map[n] = (colour_t)n;
+			screen_palette[n] = (colour_t)n;
 		}
-		// TODO laplab: Handle palette changes.
-		// GFX_RestorePaletteMapping();
 	}
 
 	static void restore_transparency() {
@@ -393,6 +394,10 @@ namespace pico_private {
 }  // namespace pico_private
 
 namespace pico_api {
+	const std::array<pico_api::colour_t, 256>& get_screen_palette() {
+		return screen_palette;
+	}
+
 	void color(uint16_t c) {
 		currentGraphicsState->fg = pico_private::fgcolor(c);
 		currentGraphicsState->bg = pico_private::bgcolor(c);
@@ -693,8 +698,7 @@ namespace pico_api {
 			if (!currentGraphicsState->extendedPalette) {
 				c1 = (c1 & 0xf) | ((c1 & 0xf0) >> 3);
 			}
-			// TODO laplab: Handle pallete colour change.
-			// GFX_MapPaletteIndex(c0, c1);
+			screen_palette[c0] = c1;
 		} else {
 			currentGraphicsState->palette_map[c0 & 0xf] = c1 & 0xf;
 		}
