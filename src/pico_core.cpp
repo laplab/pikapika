@@ -68,8 +68,6 @@ struct InputState {
 static std::string lastLoadedCart;
 
 static InputState inputState[4];
-static MouseState mouseState;
-static std::string cartDataName;
 static bool pauseMenuRequested = false;
 static bool pauseMenuActive = false;
 
@@ -98,6 +96,16 @@ static uint8_t sfx_data[pico_ram::MEM_SFX_SIZE] = {0};
 static MapSheet mapSheet;
 static MapSheet* currentMapData = &mapSheet;
 static std::map<int, MapSheet> extendedMapSheets;
+
+static uint32_t targetFps = 30;
+static uint32_t actualFps = 30;
+static uint32_t sysFps = 30;
+static uint32_t cpuUsage = 100;
+
+static uint32_t displayAreaX = 0;
+static uint32_t displayAreaY = 0;
+
+static uint32_t globalTime = 0;
 
 static pico_ram::RAM ram;
 static pico_ram::SplitNibbleMemoryArea mem_gfx(spriteSheet.sprite_data,
@@ -141,44 +149,6 @@ static uint8_t cartrom[0x4300];
 
 namespace pico_private {
 	using namespace pico_api;
-
-	void copy_cartdata_to_ram(const std::string& data) {
-		uint16_t addr = pico_ram::MEM_CART_DATA_ADDR;
-
-		std::string buf;
-
-		for (size_t n = 0; n < data.length(); n++) {
-			if (data[n] > ' ') {
-				buf += data[n];
-				if (buf.length() == 8) {
-					pico_api::poke4(addr, strtol(buf.c_str(), nullptr, 16));
-					addr += 4;
-					buf.clear();
-				}
-			}
-		}
-		mem_cart_data.clearDirty();
-	}
-
-	std::string get_cartdata_as_str() {
-		uint16_t addr = pico_ram::MEM_CART_DATA_ADDR;
-		uint16_t len = pico_ram::MEM_CART_DATA_SIZE;
-
-		std::string result;
-		char buffer[16];
-		int pos = 0;
-		for (int32_t n = addr; n < (addr + len); n += 4) {
-			sprintf(buffer, "%08x", peek4(n));
-			result += buffer;
-			pos++;
-			if (pos == 8) {
-				result += '\n';
-				pos = 0;
-			}
-		}
-
-		return result;
-	}
 
 	void copy_data_to_ram(uint16_t addr, const std::string& data) {
 		for (size_t n = 0; n < data.length(); n++) {
@@ -252,8 +222,6 @@ namespace pico_control {
 
 		mem_screen.setData(backbuffer);
 
-		cartDataName = "";
-
 		pauseMenuActive = false;
 
 		ram.addMemoryArea(&mem_gfx);
@@ -272,9 +240,6 @@ namespace pico_control {
 
 	void frame_end() {
 		if (mem_cart_data.isDirty()) {
-			if (!cartDataName.empty()) {
-				FILE_SaveGameState(cartDataName + ".p8d.txt", pico_private::get_cartdata_as_str());
-			}
 			mem_cart_data.clearDirty();
 		}
 		if (pauseMenuRequested)
@@ -322,10 +287,6 @@ namespace pico_control {
 				pauseMenuRequested = true;
 			}
 		}
-	}
-
-	void set_mouse_state(const MouseState& ms) {
-		mouseState = ms;
 	}
 
 	void test_integrity() {
@@ -388,15 +349,30 @@ namespace pico_control {
 }  // namespace pico_control
 
 namespace pico_api {
+	void update_fps(uint32_t target, uint32_t actual, uint32_t sys, uint32_t cpu) {
+		targetFps = target;
+		actualFps = actual;
+		sysFps = sys;
+		cpuUsage = cpu;
+	}
+
+	void update_display_area(uint32_t x, uint32_t y) {
+		displayAreaX = x;
+		displayAreaY = y;
+	}
+
+	void set_time(uint32_t value) {
+		globalTime = value;
+	}
+
+	uint32_t get_time() {
+		return globalTime;
+	}
 
 	void load(std::string cartname) {
 		pico_cart::load(cartname);
 		lastLoadedCart = cartname;
 		pico_control::restartCart();
-	}
-
-	void reloadcart() {
-		load(pico_cart::getCart().sections["basepath"] + pico_cart::getCart().sections["filename"]);
 	}
 
 	void run() {
@@ -467,12 +443,6 @@ namespace pico_api {
 		}
 	}
 
-	void cartdata(std::string name) {
-		cartDataName = name;
-		std::string data = FILE_LoadGameState(cartDataName + ".p8d.txt");
-		pico_private::copy_cartdata_to_ram(data);
-	}
-
 	uint32_t dget(uint16_t a) {
 		return peek4(pico_ram::MEM_CART_DATA_ADDR + ((a * 4) & 0xff));
 	}
@@ -505,28 +475,32 @@ namespace pico_api {
 		switch (key) {
 			case 1:
 			case 2:
-				fval = double(HAL_GetFrameRate('c')) / 100.0;
+				fval = double(cpuUsage) / 100.0;
 				return 3;
 			case 7:
-				ival = HAL_GetFrameRate('a');
+				ival = actualFps;
 				return 2;
 			case 8:
-				ival = HAL_GetFrameRate('t');
+				ival = targetFps;
 				return 2;
 			case 9:
-				ival = HAL_GetFrameRate('s');
+				ival = sysFps;
 				return 2;
 			case 32:
-				ival = mouseState.x;
+				// Mouse x, not supported.
+				ival = 0;
 				return 2;
 			case 33:
-				ival = mouseState.y;
+				// Mouse y, not supported.
+				ival = 0;
 				return 2;
 			case 34:
-				ival = mouseState.buttons;
+				// Mouse buttons, not supported.
+				ival = 0;
 				return 2;
 			case 36:
-				ival = mouseState.wheel;
+				// Mouse wheel, not supported.
+				ival = 0;
 				return 2;
 			case 102:
 				sval = TOSTRING(TAC08_PLATFORM);
@@ -544,15 +518,11 @@ namespace pico_api {
 				ival = buffer_size_y;
 				return 2;
 			case 412: {
-				int x, y;
-				GFX_GetDisplayArea(&x, &y);
-				ival = x;
+				ival = displayAreaX;
 				return 2;
 			}
 			case 413: {
-				int x, y;
-				GFX_GetDisplayArea(&x, &y);
-				ival = y;
+				ival = displayAreaY;
 				return 2;
 			}
 		}
@@ -571,63 +541,14 @@ namespace pico_api {
 }  // namespace pico_api
 
 namespace pico_apix {
-	void wrclip(const std::string& s) {
-		FILE_WriteClip(s);
-	}
-
-	std::string rdclip() {
-		return FILE_ReadClip();
-	}
-
-	void wrstr(const std::string& name, const std::string& s) {
-		FILE_SaveGameState(cartDataName + "_" + name, s);
-	}
-
-	std::string rdstr(const std::string& name) {
-		return FILE_LoadGameState(cartDataName + "_" + name);
-	}
-
-	void setpal(uint8_t i, uint8_t r, uint8_t g, uint8_t b) {
-		GFX_SetPaletteRGBIndex(i, r, g, b);
-	}
-
-	void selpal(const std::string& name) {
-		GFX_SelectPalette(name);
-	}
-
-	void resetpal() {
-		GFX_RestorePaletteRGB();
-	}
-
-	void resetpal(uint8_t i) {
-		GFX_RestorePaletteRGBIndex(i);
-	}
-
 	void screen(uint16_t w, uint16_t h) {
 		pico_control::init_backbuffer_mem(w, h);
 		pico_api::clip();
-		zoom();
-	}
-
-	void zoom(int32_t x, int32_t y, double zoom, double rot) {
-		GFX_SetZoom(x, y, zoom, rot);
-	}
-
-	void zoom() {
-		GFX_SetZoom(buffer_size_x / 2, buffer_size_y / 2, 1.0, 0);
-	}
-
-	void cursor(bool enable) {
-		GFX_ShowHWMouse(enable);
 	}
 
 	void menu() {
 		if (!pico_control::is_pause_menu())
 			pauseMenuRequested = true;
-	}
-
-	void siminput(uint8_t state) {
-		INP_SetSimState(state);
 	}
 
 	void sprites() {
@@ -671,10 +592,6 @@ namespace pico_apix {
 		pico_control::set_fontbuffer(currentFontData->sprite_data);
 	}
 
-	void fullscreen(bool enable) {
-		GFX_SetFullScreen(enable);
-	}
-
 	std::pair<std::string, bool> dbg_getsrc(std::string src, int line) {
 		typedef std::pair<std::string, bool> return_t;
 
@@ -688,10 +605,6 @@ namespace pico_apix {
 
 	int dbg_getsrclines() {
 		return pico_cart::getCart().source.size();
-	}
-
-	std::string getkey() {
-		return INP_GetKeyPress();
 	}
 
 }  // namespace pico_apix

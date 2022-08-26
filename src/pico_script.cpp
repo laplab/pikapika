@@ -41,25 +41,7 @@ static void throw_error(int err) {
 	}
 }
 
-static void dump_func(lua_State* ls, const char* funcname) {
-	std::stringstream str;
-
-	str << funcname + 5 << "(";
-	int params = lua_gettop(ls);
-	for (int n = 1; n <= params; n++) {
-		auto s = luaL_tolstring(ls, n, nullptr);
-		str << s << ",";
-		lua_remove(ls, -1);
-	}
-	str << ")";
-}
-
-#define DEBUG_DUMP_FUNCTION                  \
-	if (DEBUG_Trace()) {                     \
-		/* pico_control::test_integrity();*/ \
-		checkmem();                          \
-		dump_func(ls, __FUNCTION__);         \
-	}
+#define DEBUG_DUMP_FUNCTION
 
 static void register_cfuncs(lua_State* ls);
 
@@ -70,8 +52,6 @@ static void init_scripting() {
 	luaopen_string(lstate);
 
 	hook_funcs = false;
-
-	DEBUG_Trace(false);
 
 	std::string fw = pico_cart::convert_emojis(firmware);
 
@@ -97,7 +77,7 @@ static int impl_load(lua_State* ls) {
 
 static int impl_run(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	deferredAPICalls.push_back([]() { pico_api::reloadcart(); });
+	// Run is not supported.
 	return 0;
 }
 
@@ -116,10 +96,7 @@ static int impl_reload(lua_State* ls) {
 
 static int impl_cartdata(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	auto s = luaL_checkstring(ls, 1);
-	if (s) {
-		pico_api::cartdata(s);
-	}
+	// Saving cart data is not supported.
 	return 0;
 }
 
@@ -601,7 +578,7 @@ static int impl_fillp(lua_State* ls) {
 
 static int impl_time(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
-	uint64_t t = TIME_GetTime_ms();
+	uint64_t t = pico_api::get_time();
 	t = (t << 16) / 1000;
 	lua_pushnumber(ls, z8::fix32::frombits((uint32_t)t));
 	return 1;
@@ -700,43 +677,6 @@ static int impl_chr(lua_State* ls) {
 	return 0;
 }
 
-static int implx_wrclip(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto s = luaL_checkstring(ls, 1);
-	if (s) {
-		pico_apix::wrclip(s);
-	}
-	return 0;
-}
-
-static int implx_rdclip(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto s = pico_apix::rdclip();
-	lua_pushstring(ls, s.c_str());
-	return 1;
-}
-
-static int implx_rdstr(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto name = luaL_checkstring(ls, 1);
-	std::string res;
-	if (name) {
-		res = pico_apix::rdstr(name);
-	}
-	lua_pushstring(ls, res.c_str());
-	return 1;
-}
-
-static int implx_wrstr(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto name = luaL_checkstring(ls, 1);
-	auto s = luaL_checkstring(ls, 2);
-	if (name && s) {
-		pico_apix::wrstr(name, s);
-	}
-	return 0;
-}
-
 // returns nil if sound could not be loaded.
 static int implx_wavload(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
@@ -771,54 +711,11 @@ static int implx_wavplaying(lua_State* ls) {
 	return 1;
 }
 
-static int implx_setpal(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto i = luaL_checknumber(ls, 1).toInt();
-	auto r = luaL_checknumber(ls, 2).toInt();
-	auto g = luaL_checknumber(ls, 3).toInt();
-	auto b = luaL_checknumber(ls, 4).toInt();
-	pico_apix::setpal(i, r, g, b);
-	return 0;
-}
-
-static int implx_selpal(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto name = luaL_checkstring(ls, 1);
-	pico_apix::selpal(name);
-	return 0;
-}
-
-static int implx_resetpal(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	if (lua_gettop(ls) == 1) {
-		auto i = luaL_checknumber(ls, 1).toInt();
-		pico_apix::resetpal(i);
-	} else {
-		pico_apix::resetpal();
-	}
-
-	return 0;
-}
-
 static int implx_screen(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
 	auto w = luaL_checknumber(ls, 1).toInt();
 	auto h = luaL_checknumber(ls, 2).toInt();
 	pico_apix::screen(w, h);
-	return 0;
-}
-
-static int implx_zoom(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	if (lua_gettop(ls) > 0) {
-		auto x = luaL_checknumber(ls, 1).toInt();
-		auto y = luaL_checknumber(ls, 2).toInt();
-		double factor = luaL_checknumber(ls, 3);
-		double rot = luaL_optnumber(ls, 4, 0);
-		pico_apix::zoom(x, y, factor, rot);
-	} else {
-		pico_apix::zoom();
-	}
 	return 0;
 }
 
@@ -829,47 +726,9 @@ static int implx_xpal(lua_State* ls) {
 	return 0;
 }
 
-static int implx_cursor(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto enable = lua_toboolean(ls, 1);
-	pico_apix::cursor(enable);
-	return 0;
-}
-
 static int implx_showmenu(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
 	pico_apix::menu();
-	return 0;
-}
-
-static int implx_touchmask(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	uint8_t m = INP_GetTouchMask();
-	lua_pushnumber(ls, m);
-	return 1;
-}
-
-static int implx_touchavail(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	bool avail = INP_TouchAvailable();
-	lua_pushboolean(ls, avail);
-	return 1;
-}
-
-static int implx_touchstate(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto idx = luaL_checknumber(ls, 1).toInt();
-	TouchInfo ti = INP_GetTouchInfo(idx);
-	lua_pushnumber(ls, ti.x);
-	lua_pushnumber(ls, ti.y);
-	lua_pushnumber(ls, ti.state);
-	return 3;
-}
-
-static int implx_siminput(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto state = luaL_checknumber(ls, 1).toInt();
-	pico_apix::siminput((uint8_t)state);
 	return 0;
 }
 
@@ -900,34 +759,6 @@ static int implx_fonts(lua_State* ls) {
 	}
 	auto page = luaL_checknumber(ls, 1).toInt();
 	pico_apix::fonts(page);
-	return 0;
-}
-
-static int implx_open_url(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto s = luaL_checkstring(ls, 1);
-	if (s) {
-		PLATFORM_OpenURL(s);
-	}
-	return 0;
-}
-
-static int implx_tron(lua_State* ls) {
-	pico_script::tron();
-	DEBUG_DUMP_FUNCTION
-	return 0;
-}
-
-static int implx_troff(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	pico_script::troff();
-	return 0;
-}
-
-static int implx_fullscreen(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto enable = lua_toboolean(ls, 1);
-	pico_apix::fullscreen(enable);
 	return 0;
 }
 
@@ -1066,16 +897,6 @@ static int implx_dbg_hooks(lua_State* ls) {
 	return 0;
 }
 
-static int implx_getkey(lua_State* ls) {
-	DEBUG_DUMP_FUNCTION
-	auto s = pico_apix::getkey();
-	if (s.length()) {
-		lua_pushstring(ls, s.c_str());
-		return 1;
-	}
-	return 0;
-}
-
 // printx(str, x, y, c) -> returns next x, y
 static int implx_printx(lua_State* ls) {
 	DEBUG_DUMP_FUNCTION
@@ -1119,34 +940,17 @@ static const luaL_Reg pico8_api[] = {{"load", impl_load},         {"run", impl_r
                                      {"memset", impl_memset},     {"ord", impl_ord},
                                      {"chr", impl_chr},           {NULL, NULL}};
 
-static const luaL_Reg tac08_api[] = {{"wrclip", implx_wrclip},
-                                     {"rdclip", implx_rdclip},
-                                     {"wrstr", implx_wrstr},
-                                     {"rdstr", implx_rdstr},
-                                     {"wavload", implx_wavload},
+static const luaL_Reg tac08_api[] = {{"wavload", implx_wavload},
                                      {"wavplay", implx_wavplay},
                                      {"wavstop", implx_wavstop},
                                      {"wavstoploop", implx_wavstoploop},
                                      {"wavplaying", implx_wavplaying},
-                                     {"setpal", implx_setpal},
-                                     {"selpal", implx_selpal},
-                                     {"resetpal", implx_resetpal},
                                      {"screen", implx_screen},
-                                     {"zoom", implx_zoom},
                                      {"xpal", implx_xpal},
-                                     {"cursor", implx_cursor},
                                      {"showmenu", implx_showmenu},
-                                     {"touchmask", implx_touchmask},
-                                     {"touchstate", implx_touchstate},
-                                     {"touchavail", implx_touchavail},
-                                     {"siminput", implx_siminput},
                                      {"sprites", implx_sprites},
                                      {"maps", implx_maps},
                                      {"fonts", implx_fonts},
-                                     {"open_url", implx_open_url},
-                                     {"tron", implx_tron},
-                                     {"troff", implx_troff},
-                                     {"fullscreen", implx_fullscreen},
                                      {"window", implx_window},
                                      {"gfxstate", implx_gfxstate},
                                      {"dbg_getsrc", implx_dbg_getsrc},
@@ -1155,7 +959,6 @@ static const luaL_Reg tac08_api[] = {{"wrclip", implx_wrclip},
                                      {"dbg_coresume", implx_dbg_coresume},
                                      {"dbg_bpline", implx_dbg_bpline},
                                      {"dbg_hooks", implx_dbg_hooks},
-                                     {"getkey", implx_getkey},
                                      {"printx", implx_printx},
                                      {NULL, NULL}};
 
@@ -1251,13 +1054,4 @@ namespace pico_script {
 
 		return res;
 	}
-
-	void tron() {
-		DEBUG_Trace(true);
-	}
-
-	void troff() {
-		DEBUG_Trace(false);
-	}
-
 }  // namespace pico_script

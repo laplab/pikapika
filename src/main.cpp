@@ -57,11 +57,6 @@ int safe_main(int argc, char** argv) {
 	while (EVT_ProcessEvents()) {
 		using namespace pico_api;
 
-		if (DEBUG_ReloadRequested()) {
-			restarted = true;
-			pico_api::reloadcart();
-		}
-
 		if (restarted == true) {
 			restarted = false;
 			script_error = false;
@@ -70,6 +65,13 @@ int safe_main(int argc, char** argv) {
 
 		target_fps = pico_script::symbolExist("_update60") ? 60 : 30;
 		HAL_SetFrameRates(target_fps, actual_fps, sys_fps, cpu_usage);
+		pico_api::update_fps(target_fps, actual_fps, sys_fps, cpu_usage);
+
+		int x, y;
+		GFX_GetDisplayArea(&x, &y);
+		pico_api::update_display_area(x, y);
+
+		pico_api::set_time(TIME_GetTime_ms());
 
 		if ((TIME_GetTime_ms() - ticks) > target_ticks) {
 			HAL_StartFrame();
@@ -84,7 +86,6 @@ int safe_main(int argc, char** argv) {
 
 					pico_script::run("_pre_update", true, restarted);
 					pico_control::set_input_state(INP_GetInputState());
-					pico_control::set_mouse_state(INP_GetMouseState());
 
 					if (pico_control::is_pause_menu()) {
 						if (pico_script::do_menu()) {

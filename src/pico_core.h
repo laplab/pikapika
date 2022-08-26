@@ -3,13 +3,16 @@
 
 #include <utility>
 
-#include "hal_core.h"
 #include "pico_gfx.h"
 
 namespace pico_api {
+	void update_fps(uint32_t target, uint32_t actual, uint32_t sys, uint32_t cpu);
+	void update_display_area(uint32_t x, uint32_t y);
+
+	void set_time(uint32_t value);
+	uint32_t get_time();
 
 	void load(std::string cartname);
-	void reloadcart();
 	void run();
 
 	uint8_t peek(uint16_t a);
@@ -25,7 +28,6 @@ namespace pico_api {
 
 	uint32_t dget(uint16_t a);
 	void dset(uint16_t a, uint32_t v);
-	void cartdata(std::string name);
 
 	int btn();
 	int btn(int n, int player = 0);
@@ -41,22 +43,8 @@ namespace pico_api {
 
 // extended api
 namespace pico_apix {
-	void wrclip(const std::string& s);
-	std::string rdclip();
-
-	void wrstr(const std::string& name, const std::string& s);
-	std::string rdstr(const std::string& name);
-
-	void setpal(uint8_t i, uint8_t r, uint8_t g, uint8_t b);
-	void selpal(const std::string& name);
-	void resetpal();
-	void resetpal(uint8_t i);
 	void screen(uint16_t w, uint16_t h);
-	void zoom(int32_t x, int32_t y, double zoom, double rot);
-	void zoom();
-	void cursor(bool enable);
 	void menu();
-	void siminput(uint8_t state);
 
 	void sprites();
 	void sprites(int page);
@@ -67,13 +55,8 @@ namespace pico_apix {
 	void fonts();
 	void fonts(int page);
 
-	void fullscreen(bool enable);
-
 	std::pair<std::string, bool> dbg_getsrc(std::string src, int line);
 	int dbg_getsrclines();
-
-	std::string getkey();
-
 }  // namespace pico_apix
 
 namespace pico_control {
@@ -87,7 +70,6 @@ namespace pico_control {
 	void set_map_data(std::string data);
 	void set_font_data(std::string data);
 	void set_input_state(int state, int player = 0);
-	void set_mouse_state(const MouseState& ms);
 	void copy_shared_data();
 	void test_integrity();
 	void begin_pause_menu();
